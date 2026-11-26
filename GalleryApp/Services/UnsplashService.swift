@@ -21,8 +21,8 @@ struct UnsplashService {
     }
 
     func fetchPage(_ page: Int) async throws -> Page {
-        guard let key = ProcessInfo.processInfo.environment["UNSPLASH_ACCESS_KEY"],
-              !key.isEmpty else {
+        let key = Constants.unsplashAccessKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty, key != Constants.unsplashAccessKeyPlaceholder else {
             throw RequestError.missingAccessKey
         }
         
