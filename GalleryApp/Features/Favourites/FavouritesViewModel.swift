@@ -7,8 +7,7 @@ final class FavouritesViewModel {
         photos = try store.fetchPhotos()
     }
 
-    func removePhoto(withID id: String) throws {
-        try store.remove(photoID: id)
-        photos.removeAll { $0.id == id }
+    func removePhoto(withID id: String) async throws {
+        _ = try await FavouritePhotos.shared.remove(id)
     }
 }

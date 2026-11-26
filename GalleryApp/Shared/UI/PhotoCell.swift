@@ -63,7 +63,7 @@ final class PhotoCell: UICollectionViewCell {
         onFavouriteTap = nil
     }
 
-    func configure(with url: URL, isFavourite: Bool, onFavouriteTap: @escaping () -> Void) {
+    func configure(with photo: Photo, isFavourite: Bool, onFavouriteTap: @escaping () -> Void) {
         self.onFavouriteTap = onFavouriteTap
         setFavourite(isFavourite)
 
@@ -71,7 +71,7 @@ final class PhotoCell: UICollectionViewCell {
         imageView.image = nil
 
         imageTask = Task { [weak self] in
-            guard let image = try? await ImageLoader.shared.image(from: url),
+            guard let image = try? await ImageLoader.shared.image(for: photo, thumbnail: true),
                   !Task.isCancelled else { return }
 
             self?.imageView.image = image

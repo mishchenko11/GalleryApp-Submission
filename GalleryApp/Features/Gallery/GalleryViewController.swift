@@ -22,6 +22,12 @@ class GalleryViewController: UIViewController {
         view.backgroundColor = .systemBackground
         navigationItem.title = "Gallery"
         setupCollectionView()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(favouritesDidChange(_:)),
+            name: FavouritePhotos.didChange,
+            object: FavouritePhotos.shared
+        )
         loadMorePhotos()
     }
 
@@ -55,27 +61,37 @@ class GalleryViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        refreshFavourites()
+    }
 
+    @objc private func favouritesDidChange(_ notification: Notification) {
+        refreshFavourites()
+    }
+
+    private func refreshFavourites() {
         do {
             let savedIDs = try favouriteStore.favouriteIDs()
-            guard savedIDs != favouriteIDs else { return }
+            let changedIDs = favouriteIDs.symmetricDifference(savedIDs)
+            guard !changedIDs.isEmpty else { return }
+
             favouriteIDs = savedIDs
-            collectionView.reloadData()
+            for indexPath in collectionView.indexPathsForVisibleItems {
+                guard viewModel.photos.indices.contains(indexPath.item) else { continue }
+                let id = viewModel.photos[indexPath.item].id
+                if changedIDs.contains(id),
+                   let cell = collectionView.cellForItem(at: indexPath) as? PhotoCell {
+                    cell.setFavourite(savedIDs.contains(id))
+                }
+            }
         } catch {
             print("Could not read favourites:", error)
             showErrorAlert(title: "Couldn’t load favourites")
         }
     }
 
-    private func toggleFavourite(_ photo: Photo, in cell: PhotoCell?) {
+    private func toggleFavourite(_ photo: Photo) async {
         do {
-            let isSaved = try favouriteStore.toggle(photo)
-            if isSaved {
-                favouriteIDs.insert(photo.id)
-            } else {
-                favouriteIDs.remove(photo.id)
-            }
-            cell?.setFavourite(isSaved)
+            _ = try await FavouritePhotos.shared.toggle(photo)
         } catch {
             print("Could not change favourite:", error)
             showErrorAlert(title: "Couldn’t update favourites", message: "Please try again.")
@@ -122,10 +138,10 @@ extension GalleryViewController: UICollectionViewDataSource {
         if let photoCell = cell as? PhotoCell {
             let photo = viewModel.photos[indexPath.item]
             photoCell.configure(
-                with: photo.urls.small,
+                with: photo,
                 isFavourite: favouriteIDs.contains(photo.id)
-            ) { [weak self, weak photoCell] in
-                self?.toggleFavourite(photo, in: photoCell)
+            ) { [weak self] in
+                Task { await self?.toggleFavourite(photo) }
             }
         }
 
@@ -139,6 +155,10 @@ extension GalleryViewController: UICollectionViewDelegate {
         willDisplay cell: UICollectionViewCell,
         forItemAt indexPath: IndexPath
     ) {
+        if let photoCell = cell as? PhotoCell, viewModel.photos.indices.contains(indexPath.item) {
+            photoCell.setFavourite(favouriteIDs.contains(viewModel.photos[indexPath.item].id))
+        }
+
         let loadThreshold = max(viewModel.photos.count - 4, 0)
         if indexPath.item >= loadThreshold {
             loadMorePhotos()
