@@ -19,7 +19,6 @@ final class ImageLoader {
     }
 
     func image(from url: URL) async throws -> UIImage {
-        try Task.checkCancellation()
         let cacheKey = url as NSURL
 
         if let image = cache.object(forKey: cacheKey) {
@@ -27,7 +26,6 @@ final class ImageLoader {
         }
 
         let (data, response) = try await URLSession.shared.data(from: url)
-        try Task.checkCancellation()
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {

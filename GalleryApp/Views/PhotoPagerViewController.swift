@@ -8,9 +8,7 @@
 import UIKit
 
 final class PhotoPagerViewController: UIPageViewController {
-    private let photos: [Photo]
-    private let selectedIndex: Int
-    private let favouriteStore = FavouriteStore()
+    private let viewModel: PhotoPagerViewModel
     
     private lazy var favouriteButton = UIBarButtonItem(
         image: UIImage(systemName: "heart"),
@@ -20,8 +18,7 @@ final class PhotoPagerViewController: UIPageViewController {
     )
     
     init(photos: [Photo], selectedIndex: Int) {
-        self.photos = photos
-        self.selectedIndex = selectedIndex
+        viewModel = PhotoPagerViewModel(photos: photos, selectedIndex: selectedIndex)
         super.init(transitionStyle: .scroll, navigationOrientation: .horizontal)
     }
     
@@ -37,7 +34,7 @@ final class PhotoPagerViewController: UIPageViewController {
         delegate = self
         navigationItem.rightBarButtonItem = favouriteButton
         
-        if let selectedPage = makePage(at: selectedIndex) {
+        if let selectedPage = makePage(at: viewModel.selectedIndex) {
             setViewControllers([selectedPage], direction: .forward, animated: false)
         }
         refreshFavouriteButton()
@@ -48,14 +45,14 @@ final class PhotoPagerViewController: UIPageViewController {
             return nil
         }
         
-        return photos[page.photoIndex]
+        return viewModel.photo(at: page.photoIndex)
     }
     
     private func refreshFavouriteButton() {
         guard let photo = currentPhoto else { return }
         
         do {
-            let isSaved = try favouriteStore.isFavourite(photo.id)
+            let isSaved = try viewModel.isFavourite(photo)
             showFavouriteState(isSaved)
         } catch {
             print("Could not read favourite:", error)
@@ -66,7 +63,7 @@ final class PhotoPagerViewController: UIPageViewController {
         guard let photo = currentPhoto else { return }
         
         do {
-            let isSaved = try favouriteStore.toggle(photo)
+            let isSaved = try viewModel.toggleFavourite(photo)
             showFavouriteState(isSaved)
         } catch {
             print("Could not change favourite:", error)
@@ -81,8 +78,8 @@ final class PhotoPagerViewController: UIPageViewController {
     }
     
     private func makePage(at index: Int) -> PhotoDetailViewController? {
-        guard photos.indices.contains(index) else { return nil }
-        return PhotoDetailViewController(photo: photos[index], photoIndex: index)
+        guard let photo = viewModel.photo(at: index) else { return nil }
+        return PhotoDetailViewController(photo: photo, photoIndex: index)
     }
 }
 
