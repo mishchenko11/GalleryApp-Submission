@@ -37,6 +37,10 @@ final class PhotoPagerViewController: UIPageViewController {
         if let selectedPage = makePage(at: viewModel.selectedIndex) {
             setViewControllers([selectedPage], direction: .forward, animated: false)
         }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         refreshFavouriteButton()
     }
     
@@ -56,6 +60,10 @@ final class PhotoPagerViewController: UIPageViewController {
             showFavouriteState(isSaved)
         } catch {
             print("Could not read favourite:", error)
+            favouriteButton.image = UIImage(systemName: "heart")
+            favouriteButton.accessibilityLabel = "Favourite status unavailable"
+            favouriteButton.isEnabled = false
+            showErrorAlert(title: "Couldn’t load favourite status")
         }
     }
     
@@ -67,10 +75,12 @@ final class PhotoPagerViewController: UIPageViewController {
             showFavouriteState(isSaved)
         } catch {
             print("Could not change favourite:", error)
+            showErrorAlert(title: "Couldn’t update favourites", message: "Please try again.")
         }
     }
     
     private func showFavouriteState(_ isSaved: Bool) {
+        favouriteButton.isEnabled = true
         favouriteButton.image = UIImage(systemName: isSaved ? "heart.fill" : "heart")
         favouriteButton.accessibilityLabel = isSaved
             ? "Remove from Favourites"
