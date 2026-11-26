@@ -75,7 +75,7 @@ final class FavouritesViewController: UIViewController {
         let safeArea = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: safeArea.topAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
         ])
