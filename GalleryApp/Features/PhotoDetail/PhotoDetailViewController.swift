@@ -65,9 +65,9 @@ final class PhotoDetailViewController: UIViewController {
             imageView.heightAnchor.constraint(equalTo: safeArea.heightAnchor, multiplier: 0.6)
         ])
 
-        let url = viewModel.imageURL
+        let photo = viewModel.photo
         Task { [weak self] in
-            guard let image = try? await ImageLoader.shared.image(from: url),
+            guard let image = try? await ImageLoader.shared.image(for: photo, thumbnail: false),
                   !Task.isCancelled else { return }
 
             self?.imageView.image = image

@@ -14,15 +14,47 @@ final class FavouritesViewController: UIViewController {
         collectionViewLayout: PhotoGridLayout.make()
     )
 
+    private lazy var dataSource = UICollectionViewDiffableDataSource<Int, String>(
+        collectionView: collectionView
+    ) { [weak self] collectionView, indexPath, photoID in
+        guard let self, let photo = viewModel.photos.first(where: { $0.id == photoID }) else { return nil }
+        let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: PhotoCell.reuseIdentifier,
+            for: indexPath
+        )
+
+        if let photoCell = cell as? PhotoCell {
+            photoCell.configure(with: photo, isFavourite: true) { [weak self] in
+                Task { await self?.removePhoto(withID: photoID) }
+            }
+        }
+
+        return cell
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         navigationItem.title = "Favourites"
         setupCollectionView()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(favouritesDidChange(_:)),
+            name: FavouritePhotos.didChange,
+            object: FavouritePhotos.shared
+        )
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        refreshFavourites()
+    }
+
+    @objc private func favouritesDidChange(_ notification: Notification) {
+        refreshFavourites()
+    }
+
+    private func refreshFavourites() {
         do {
             try viewModel.loadPhotos()
             updateGrid()
@@ -36,7 +68,6 @@ final class FavouritesViewController: UIViewController {
 
     private func setupCollectionView() {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.register(PhotoCell.self, forCellWithReuseIdentifier: PhotoCell.reuseIdentifier)
         view.addSubview(collectionView)
@@ -51,9 +82,15 @@ final class FavouritesViewController: UIViewController {
     }
 
     private func updateGrid() {
-        collectionView.reloadData()
+        let photoIDs = viewModel.photos.map(\.id)
+        if dataSource.snapshot().itemIdentifiers != photoIDs {
+            var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
+            snapshot.appendSections([0])
+            snapshot.appendItems(photoIDs)
+            dataSource.apply(snapshot, animatingDifferences: view.window != nil)
+        }
 
-        if viewModel.photos.isEmpty {
+        if photoIDs.isEmpty {
             var configuration = UIContentUnavailableConfiguration.empty()
             configuration.image = UIImage(systemName: "heart")
             configuration.text = "No favourites yet"
@@ -64,41 +101,12 @@ final class FavouritesViewController: UIViewController {
         }
     }
 
-    private func removePhoto(withID id: String) {
+    private func removePhoto(withID id: String) async {
         do {
-            try viewModel.removePhoto(withID: id)
-            updateGrid()
+            try await viewModel.removePhoto(withID: id)
         } catch {
             showErrorAlert(title: "Couldn’t remove photo", message: "Please try again.")
         }
-    }
-}
-
-extension FavouritesViewController: UICollectionViewDataSource {
-    func collectionView(
-        _ collectionView: UICollectionView,
-        numberOfItemsInSection section: Int
-    ) -> Int {
-        viewModel.photos.count
-    }
-
-    func collectionView(
-        _ collectionView: UICollectionView,
-        cellForItemAt indexPath: IndexPath
-    ) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: PhotoCell.reuseIdentifier,
-            for: indexPath
-        )
-
-        if let photoCell = cell as? PhotoCell {
-            let photo = viewModel.photos[indexPath.item]
-            photoCell.configure(with: photo.urls.small, isFavourite: true) { [weak self] in
-                self?.removePhoto(withID: photo.id)
-            }
-        }
-
-        return cell
     }
 }
 
@@ -107,7 +115,10 @@ extension FavouritesViewController: UICollectionViewDelegate {
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
-        let viewer = PhotoPagerViewController(photos: viewModel.photos, selectedIndex: indexPath.item)
+        guard let photoID = dataSource.itemIdentifier(for: indexPath),
+              let selectedIndex = viewModel.photos.firstIndex(where: { $0.id == photoID }) else { return }
+
+        let viewer = PhotoPagerViewController(photos: viewModel.photos, selectedIndex: selectedIndex)
         navigationController?.pushViewController(viewer, animated: true)
     }
 }

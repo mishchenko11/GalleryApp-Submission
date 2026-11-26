@@ -19,7 +19,7 @@ final class PhotoPagerViewModel {
         try favouriteStore.isFavourite(photo.id)
     }
 
-    func toggleFavourite(_ photo: Photo) throws -> Bool {
-        try favouriteStore.toggle(photo)
+    func toggleFavourite(_ photo: Photo) async throws {
+        _ = try await FavouritePhotos.shared.toggle(photo)
     }
 }

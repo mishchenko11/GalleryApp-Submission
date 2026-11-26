@@ -19,7 +19,7 @@ GalleryApp uses MVVM and programmatic UIKit. `URLSession` fetches photo data, `N
 ## Assumptions
 
 - The gallery needs an internet connection and an Unsplash Access Key.
-- Favourites are stored on the device. Photo images are cached in memory for the current session.
+- Favourites remain available offline once their images are saved to the device. Older favourites get a local image copy the next time they are viewed online. Other images are cached in memory for the current session.
 
 ## Tests and linting
 

@@ -2,10 +2,10 @@ import Foundation
 
 struct PhotoDetailViewModel {
     let descriptionText: String
-    let imageURL: URL
+    let photo: Photo
 
     init(photo: Photo) {
         descriptionText = photo.description ?? "No description"
-        imageURL = photo.urls.regular
+        self.photo = photo
     }
 }

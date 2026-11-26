@@ -33,6 +33,12 @@ final class PhotoPagerViewController: UIPageViewController {
         dataSource = self
         delegate = self
         navigationItem.rightBarButtonItem = favouriteButton
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(favouritesDidChange(_:)),
+            name: FavouritePhotos.didChange,
+            object: FavouritePhotos.shared
+        )
 
         if let selectedPage = makePage(at: viewModel.selectedIndex) {
             setViewControllers([selectedPage], direction: .forward, animated: false)
@@ -50,6 +56,10 @@ final class PhotoPagerViewController: UIPageViewController {
         }
 
         return viewModel.photo(at: page.photoIndex)
+    }
+
+    @objc private func favouritesDidChange(_ notification: Notification) {
+        refreshFavouriteButton()
     }
 
     private func refreshFavouriteButton() {
@@ -70,12 +80,14 @@ final class PhotoPagerViewController: UIPageViewController {
     @objc private func toggleFavourite() {
         guard let photo = currentPhoto else { return }
 
-        do {
-            let isSaved = try viewModel.toggleFavourite(photo)
-            showFavouriteState(isSaved)
-        } catch {
-            print("Could not change favourite:", error)
-            showErrorAlert(title: "Couldn’t update favourites", message: "Please try again.")
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await viewModel.toggleFavourite(photo)
+            } catch {
+                print("Could not change favourite:", error)
+                showErrorAlert(title: "Couldn’t update favourites", message: "Please try again.")
+            }
         }
     }
 
