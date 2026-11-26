@@ -8,24 +8,29 @@
 import UIKit
 
 final class PhotoDetailViewController: UIViewController {
+    let photoIndex: Int
+
     private let photo: Photo
     private let imageView = UIImageView()
     
-    init(photo: Photo) {
+    init(photo: Photo, photoIndex: Int) {
         self.photo = photo
+        self.photoIndex = photoIndex
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
-        fatalError("Use init(photo:)")
+        fatalError("Use init(photo:photoIndex:)")
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.title = "Photo Detail"
         view.backgroundColor = .systemBackground
         imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .clear
+        imageView.layer.cornerRadius = 16
+        imageView.clipsToBounds = true
         
         let descriptionLabel = UILabel()
         descriptionLabel.text = photo.description ?? "No description"
@@ -62,8 +67,10 @@ final class PhotoDetailViewController: UIViewController {
         
         let url = photo.urls.regular
         Task { [weak self] in
-            guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
-            self?.imageView.image = UIImage(data: data)
+            guard let image = try? await ImageLoader.shared.image(from: url),
+                  !Task.isCancelled else { return }
+
+            self?.imageView.image = image
         }
     }
 }

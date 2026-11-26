@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24902" systemVersion="25F84" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="FavouritePhoto" representedClassName="FavouritePhoto" syncable="YES" codeGenerationType="class">
+        <attribute name="photoDescription" optional="YES" attributeType="String"/>
+        <attribute name="photoID" attributeType="String"/>
+        <attribute name="regularURL" attributeType="String"/>
+        <attribute name="smallURL" attributeType="String"/>
+    </entity>
+</model>
