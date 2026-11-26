@@ -9,9 +9,12 @@ import UIKit
 
 class GalleryViewController: UIViewController {
     private let viewModel = GalleryViewModel()
-    private lazy var collectionView = UICollectionView(
+    private let favouriteStore = FavouriteStore()
+    private var favouriteIDs: Set<String> = []
+
+    private let collectionView = UICollectionView(
         frame: .zero,
-        collectionViewLayout: makeGridLayout()
+        collectionViewLayout: PhotoGridLayout.make()
     )
 
     override func viewDidLoad() {
@@ -23,11 +26,38 @@ class GalleryViewController: UIViewController {
         Task {
             do {
                 try await viewModel.loadPhotos()
-                navigationItem.title = "Gallery (\(viewModel.photos.count))"
+                print("Photos received:", viewModel.photos.count)
                 collectionView.reloadData()
             } catch {
                 print("Error:", error)
             }
+        }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        do {
+            let savedIDs = try favouriteStore.favouriteIDs()
+            guard savedIDs != favouriteIDs else { return }
+            favouriteIDs = savedIDs
+            collectionView.reloadData()
+        } catch {
+            print("Could not read favourites:", error)
+        }
+    }
+
+    private func toggleFavourite(_ photo: Photo, in cell: PhotoCell?) {
+        do {
+            let isSaved = try favouriteStore.toggle(photo)
+            if isSaved {
+                favouriteIDs.insert(photo.id)
+            } else {
+                favouriteIDs.remove(photo.id)
+            }
+            cell?.setFavourite(isSaved)
+        } catch {
+            print("Could not change favourite:", error)
         }
     }
 
@@ -49,28 +79,7 @@ class GalleryViewController: UIViewController {
             collectionView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
         ])
     }
-
-    private func makeGridLayout() -> UICollectionViewLayout {
-        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(0.5),
-            heightDimension: .fractionalHeight(1)
-        ))
-        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4)
-
-        let row = NSCollectionLayoutGroup.horizontal(
-            layoutSize: NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1),
-                heightDimension: .fractionalWidth(0.5)
-            ),
-            subitems: [item, item]
-        )
-
-        let section = NSCollectionLayoutSection(group: row)
-        section.interGroupSpacing = 8
-        return UICollectionViewCompositionalLayout(section: section)
-    }
 }
-
 
 extension GalleryViewController: UICollectionViewDataSource {
     func collectionView(
@@ -90,7 +99,13 @@ extension GalleryViewController: UICollectionViewDataSource {
         )
 
         if let photoCell = cell as? PhotoCell {
-            photoCell.configure(with: viewModel.photos[indexPath.item].urls.small)
+            let photo = viewModel.photos[indexPath.item]
+            photoCell.configure(
+                with: photo.urls.small,
+                isFavourite: favouriteIDs.contains(photo.id)
+            ) { [weak self, weak photoCell] in
+                self?.toggleFavourite(photo, in: photoCell)
+            }
         }
 
         return cell
@@ -103,8 +118,10 @@ extension GalleryViewController: UICollectionViewDelegate {
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
-        let photo = viewModel.photos[indexPath.item]
-        let detail = PhotoDetailViewController(photo: photo)
-        navigationController?.pushViewController(detail, animated: true)
+        let viewer = PhotoPagerViewController(
+            photos: viewModel.photos,
+            selectedIndex: indexPath.item
+        )
+        navigationController?.pushViewController(viewer, animated: true)
     }
 }
