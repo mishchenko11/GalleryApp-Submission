@@ -11,6 +11,8 @@ final class PhotoCell: UICollectionViewCell {
     static let reuseIdentifier = "PhotoCell"
 
     private let imageView = UIImageView()
+    private let loadingIndicator = UIActivityIndicatorView(style: .medium)
+    private let errorPlaceholder = UIImageView(image: UIImage(systemName: "photo"))
     private let favouriteButton = UIButton(type: .system)
     private var imageTask: Task<Void, Never>?
     private var onFavouriteTap: (() -> Void)?
@@ -25,6 +27,17 @@ final class PhotoCell: UICollectionViewCell {
         imageView.clipsToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(imageView)
+
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(loadingIndicator)
+
+        errorPlaceholder.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 30)
+        errorPlaceholder.tintColor = .secondaryLabel
+        errorPlaceholder.isAccessibilityElement = true
+        errorPlaceholder.accessibilityLabel = "Couldn’t load photo"
+        errorPlaceholder.isHidden = true
+        errorPlaceholder.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(errorPlaceholder)
 
         var buttonStyle = UIButton.Configuration.filled()
         buttonStyle.baseBackgroundColor = .black.withAlphaComponent(0.65)
@@ -45,6 +58,10 @@ final class PhotoCell: UICollectionViewCell {
             imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            loadingIndicator.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            errorPlaceholder.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            errorPlaceholder.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             favouriteButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
             favouriteButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
             favouriteButton.widthAnchor.constraint(equalToConstant: 44),
@@ -58,8 +75,7 @@ final class PhotoCell: UICollectionViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        imageTask?.cancel()
-        imageView.image = nil
+        resetImage()
         onFavouriteTap = nil
     }
 
@@ -67,15 +83,31 @@ final class PhotoCell: UICollectionViewCell {
         self.onFavouriteTap = onFavouriteTap
         setFavourite(isFavourite)
 
-        imageTask?.cancel()
-        imageView.image = nil
+        resetImage()
+        loadingIndicator.startAnimating()
 
         imageTask = Task { [weak self] in
-            guard let image = try? await ImageLoader.shared.image(for: photo, thumbnail: true),
-                  !Task.isCancelled else { return }
+            do {
+                let image = try await ImageLoader.shared.image(for: photo, thumbnail: true)
+                guard !Task.isCancelled else { return }
 
-            self?.imageView.image = image
+                self?.loadingIndicator.stopAnimating()
+                self?.imageView.image = image
+            } catch {
+                guard !Task.isCancelled else { return }
+
+                self?.loadingIndicator.stopAnimating()
+                self?.errorPlaceholder.isHidden = false
+            }
         }
+    }
+
+    private func resetImage() {
+        imageTask?.cancel()
+        imageTask = nil
+        imageView.image = nil
+        loadingIndicator.stopAnimating()
+        errorPlaceholder.isHidden = true
     }
 
     func setFavourite(_ isFavourite: Bool) {
