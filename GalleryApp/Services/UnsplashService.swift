@@ -10,17 +10,25 @@ import Foundation
 struct UnsplashService {
     enum RequestError: Error {
         case missingAccessKey
+        case invalidURL
         case invalidResponse
         case httpStatus(Int)
     }
     
-    func fetchFirstPage() async throws -> [Photo] {
+    struct Page {
+        let photos: [Photo]
+        let hasNextPage: Bool
+    }
+
+    func fetchPage(_ page: Int) async throws -> Page {
         guard let key = ProcessInfo.processInfo.environment["UNSPLASH_ACCESS_KEY"],
               !key.isEmpty else {
             throw RequestError.missingAccessKey
         }
         
-        let url = URL(string: "https://api.unsplash.com/photos?page=1&per_page=30")!
+        guard let url = URL(string: "https://api.unsplash.com/photos?page=\(page)&per_page=30") else {
+            throw RequestError.invalidURL
+        }
         var request = URLRequest(url: url)
         request.setValue("Client-ID \(key)", forHTTPHeaderField: "Authorization")
         
@@ -33,6 +41,10 @@ struct UnsplashService {
             throw RequestError.httpStatus(http.statusCode)
         }
         
-        return try JSONDecoder().decode([Photo].self, from: data)
+        let photos = try JSONDecoder().decode([Photo].self, from: data)
+        let link = http.value(forHTTPHeaderField: "Link")
+        let hasNextPage = link?.contains("rel=\"next\"") == true
+
+        return Page(photos: photos, hasNextPage: hasNextPage)
     }
 }

@@ -22,14 +22,20 @@ class GalleryViewController: UIViewController {
         view.backgroundColor = .systemBackground
         navigationItem.title = "Gallery"
         setupCollectionView()
+        loadMorePhotos()
+    }
 
-        Task {
+    private func loadMorePhotos() {
+        Task { [weak self] in
+            guard let self else { return }
+
             do {
-                try await viewModel.loadPhotos()
-                print("Photos received:", viewModel.photos.count)
-                collectionView.reloadData()
+                if try await viewModel.loadNextPage() {
+                    collectionView.reloadData()
+                    print("Photos loaded:", viewModel.photos.count)
+                }
             } catch {
-                print("Error:", error)
+                print("Could not load photos:", error)
             }
         }
     }
@@ -110,10 +116,20 @@ extension GalleryViewController: UICollectionViewDataSource {
 
         return cell
     }
-    
 }
 
 extension GalleryViewController: UICollectionViewDelegate {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplay cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        let loadThreshold = max(viewModel.photos.count - 4, 0)
+        if indexPath.item >= loadThreshold {
+            loadMorePhotos()
+        }
+    }
+
     func collectionView(
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
