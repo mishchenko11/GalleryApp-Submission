@@ -36,6 +36,8 @@ final class FavouritesViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         navigationItem.title = "Favourites"
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationItem.largeTitleDisplayMode = .always
         setupCollectionView()
         NotificationCenter.default.addObserver(
             self,

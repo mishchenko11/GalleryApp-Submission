@@ -21,6 +21,8 @@ class GalleryViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         navigationItem.title = "Gallery"
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationItem.largeTitleDisplayMode = .always
         setupCollectionView()
         NotificationCenter.default.addObserver(
             self,
