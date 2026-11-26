@@ -9,23 +9,23 @@ import UIKit
 
 final class PhotoPagerViewController: UIPageViewController {
     private let viewModel: PhotoPagerViewModel
-    
+
     private lazy var favouriteButton = UIBarButtonItem(
         image: UIImage(systemName: "heart"),
         style: .plain,
         target: self,
         action: #selector(toggleFavourite)
     )
-    
+
     init(photos: [Photo], selectedIndex: Int) {
         viewModel = PhotoPagerViewModel(photos: photos, selectedIndex: selectedIndex)
         super.init(transitionStyle: .scroll, navigationOrientation: .horizontal)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("Use init(photos:selectedIndex:)")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.title = "Photo Detail"
@@ -33,7 +33,7 @@ final class PhotoPagerViewController: UIPageViewController {
         dataSource = self
         delegate = self
         navigationItem.rightBarButtonItem = favouriteButton
-        
+
         if let selectedPage = makePage(at: viewModel.selectedIndex) {
             setViewControllers([selectedPage], direction: .forward, animated: false)
         }
@@ -43,18 +43,18 @@ final class PhotoPagerViewController: UIPageViewController {
         super.viewDidAppear(animated)
         refreshFavouriteButton()
     }
-    
+
     private var currentPhoto: Photo? {
         guard let page = viewControllers?.first as? PhotoDetailViewController else {
             return nil
         }
-        
+
         return viewModel.photo(at: page.photoIndex)
     }
-    
+
     private func refreshFavouriteButton() {
         guard let photo = currentPhoto else { return }
-        
+
         do {
             let isSaved = try viewModel.isFavourite(photo)
             showFavouriteState(isSaved)
@@ -66,10 +66,10 @@ final class PhotoPagerViewController: UIPageViewController {
             showErrorAlert(title: "Couldn’t load favourite status")
         }
     }
-    
+
     @objc private func toggleFavourite() {
         guard let photo = currentPhoto else { return }
-        
+
         do {
             let isSaved = try viewModel.toggleFavourite(photo)
             showFavouriteState(isSaved)
@@ -78,15 +78,15 @@ final class PhotoPagerViewController: UIPageViewController {
             showErrorAlert(title: "Couldn’t update favourites", message: "Please try again.")
         }
     }
-    
+
     private func showFavouriteState(_ isSaved: Bool) {
         favouriteButton.isEnabled = true
         favouriteButton.image = UIImage(systemName: isSaved ? "heart.fill" : "heart")
         favouriteButton.accessibilityLabel = isSaved
-            ? "Remove from Favourites"
-            : "Add to Favourites"
+        ? "Remove from Favourites"
+        : "Add to Favourites"
     }
-    
+
     private func makePage(at index: Int) -> PhotoDetailViewController? {
         guard let photo = viewModel.photo(at: index) else { return nil }
         return PhotoDetailViewController(photo: photo, photoIndex: index)

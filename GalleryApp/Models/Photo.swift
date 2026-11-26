@@ -11,7 +11,7 @@ struct Photo: Decodable {
     let id: String
     let description: String?
     let urls: ImageURLs
-    
+
     struct ImageURLs: Decodable {
         let small: URL
         let regular: URL
