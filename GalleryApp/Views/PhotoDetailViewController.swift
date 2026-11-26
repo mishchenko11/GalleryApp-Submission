@@ -10,11 +10,11 @@ import UIKit
 final class PhotoDetailViewController: UIViewController {
     let photoIndex: Int
 
-    private let photo: Photo
+    private let viewModel: PhotoDetailViewModel
     private let imageView = UIImageView()
     
     init(photo: Photo, photoIndex: Int) {
-        self.photo = photo
+        viewModel = PhotoDetailViewModel(photo: photo)
         self.photoIndex = photoIndex
         super.init(nibName: nil, bundle: nil)
     }
@@ -33,7 +33,7 @@ final class PhotoDetailViewController: UIViewController {
         imageView.clipsToBounds = true
         
         let descriptionLabel = UILabel()
-        descriptionLabel.text = photo.description ?? "No description"
+        descriptionLabel.text = viewModel.descriptionText
         descriptionLabel.numberOfLines = 0
         descriptionLabel.font = .preferredFont(forTextStyle: .body)
         descriptionLabel.adjustsFontForContentSizeCategory = true
@@ -65,7 +65,7 @@ final class PhotoDetailViewController: UIViewController {
             imageView.heightAnchor.constraint(equalTo: safeArea.heightAnchor, multiplier: 0.6)
         ])
         
-        let url = photo.urls.regular
+        let url = viewModel.imageURL
         Task { [weak self] in
             guard let image = try? await ImageLoader.shared.image(from: url),
                   !Task.isCancelled else { return }
