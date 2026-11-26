@@ -11,13 +11,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions:
+               UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
         _ = PersistenceController.shared
-        
+
         let window = UIWindow(windowScene: windowScene)
-        
+
         let gallery = UINavigationController(
             rootViewController: GalleryViewController()
         )
@@ -26,7 +26,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             image: UIImage(systemName: "photo.on.rectangle"),
             tag: 0
         )
-        
+
         let favourites = UINavigationController(
             rootViewController: FavouritesViewController()
         )
@@ -35,21 +35,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             image: UIImage(systemName: "heart"),
             tag: 1
         )
-        
+
         let tabs = UITabBarController()
         tabs.viewControllers = [gallery, favourites]
         window.rootViewController = tabs
         self.window = window
         window.makeKeyAndVisible()
-        
-        guard let _ = (scene as? UIWindowScene) else { return }
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
         // This occurs shortly after the scene enters the background, or when its session is discarded.
         // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+        // The scene may re-connect later, as its session was not necessarily discarded
+        // (see `application:didDiscardSceneSessions` instead).
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
@@ -73,6 +72,4 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // to restore the scene back to its current state.
     }
 
-
 }
-

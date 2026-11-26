@@ -9,18 +9,18 @@ import UIKit
 
 final class PhotoCell: UICollectionViewCell {
     static let reuseIdentifier = "PhotoCell"
-    
+
     private let imageView = UIImageView()
     private let favouriteButton = UIButton(type: .system)
     private var imageTask: Task<Void, Never>?
     private var onFavouriteTap: (() -> Void)?
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.backgroundColor = .secondarySystemBackground
         contentView.layer.cornerRadius = 12
         contentView.clipsToBounds = true
-        
+
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -51,25 +51,25 @@ final class PhotoCell: UICollectionViewCell {
             favouriteButton.heightAnchor.constraint(equalToConstant: 44)
         ])
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("PhotoCell is created programmatically")
     }
-    
+
     override func prepareForReuse() {
         super.prepareForReuse()
         imageTask?.cancel()
         imageView.image = nil
         onFavouriteTap = nil
     }
-    
+
     func configure(with url: URL, isFavourite: Bool, onFavouriteTap: @escaping () -> Void) {
         self.onFavouriteTap = onFavouriteTap
         setFavourite(isFavourite)
 
         imageTask?.cancel()
         imageView.image = nil
-        
+
         imageTask = Task { [weak self] in
             guard let image = try? await ImageLoader.shared.image(from: url),
                   !Task.isCancelled else { return }
