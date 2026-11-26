@@ -22,7 +22,7 @@ struct UnsplashService {
 
     func fetchPage(_ page: Int) async throws -> Page {
         let key = Constants.unsplashAccessKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty, key != Constants.unsplashAccessKeyPlaceholder else {
+        guard !key.isEmpty else {
             throw RequestError.missingAccessKey
         }
 
