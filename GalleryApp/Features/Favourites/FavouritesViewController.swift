@@ -69,13 +69,7 @@ final class FavouritesViewController: UIViewController {
             try viewModel.removePhoto(withID: id)
             updateGrid()
         } catch {
-            let alert = UIAlertController(
-                title: "Couldn’t remove photo",
-                message: "Please try again.",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
+            showErrorAlert(title: "Couldn’t remove photo", message: "Please try again.")
         }
     }
 }

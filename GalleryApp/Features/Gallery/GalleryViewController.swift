@@ -36,12 +36,25 @@ class GalleryViewController: UIViewController {
                 }
             } catch {
                 print("Could not load photos:", error)
+
+                let alert = UIAlertController(
+                    title: "Couldn’t load photos",
+                    message: "Please try again.",
+                    preferredStyle: .alert
+                )
+
+                alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                alert.addAction(UIAlertAction(title: "Try Again", style: .default) { [weak self] _ in
+                    self?.loadMorePhotos()
+                })
+
+                present(alert, animated: true)
             }
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
 
         do {
             let savedIDs = try favouriteStore.favouriteIDs()
@@ -50,6 +63,7 @@ class GalleryViewController: UIViewController {
             collectionView.reloadData()
         } catch {
             print("Could not read favourites:", error)
+            showErrorAlert(title: "Couldn’t load favourites")
         }
     }
 
@@ -64,6 +78,7 @@ class GalleryViewController: UIViewController {
             cell?.setFavourite(isSaved)
         } catch {
             print("Could not change favourite:", error)
+            showErrorAlert(title: "Couldn’t update favourites", message: "Please try again.")
         }
     }
 
